@@ -1,0 +1,8 @@
+mcp<2
+fastapi
+uvicorn
+pyjwt[crypto]
+python-dotenv
+azure-identity
+azure-containerapps-sandbox==0.1.0b4
+cryptography
