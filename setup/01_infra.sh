@@ -12,7 +12,7 @@ GROUP="sg-contoso-${SUFFIX}"
 SUB=$(az account show --query id -o tsv)
 TENANT=$(az account show --query tenantId -o tsv)
 API="2026-02-01-preview"
-READER_ID="acdd72a7-3385-48ef-bd42-f606fba81ae7"
+READER_ID="acdd72a7-3385-48ef-bd42-f606fba81ae7"  # built-in Reader role; the only role the admin may assign
 
 echo "Subscription $SUB, region $REGION"
 az provider register -n Microsoft.App --wait
