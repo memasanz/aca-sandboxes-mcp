@@ -108,9 +108,49 @@ Tested against the running MCP server with real Entra tokens:
 | Call with no token | Refused (401) |
 | Valid Entra token from a different app (`contoso-admin`) | Refused (401, caller app not allowed) |
 | Token from `contoso-agent-client` | Accepted. The code ran in a fresh sandbox and the result came back. |
+| Orchestrator signed in with a certificate and no client secret | Worked. The same sandbox run succeeded. |
 
-Not yet tested: signing in as the orchestrator with a certificate instead of a
-client secret.
+The setup scripts were run end to end on a fresh environment: `01_infra.sh`,
+`02_mcp_app_registrations.sh`, `03_orchestrator_certificate.sh`, then
+`99_teardown.sh`, which removed everything. A new Data Owner assignment can take
+a few minutes to take effect, so the first call after `01_infra.sh` may be slow.
+
+## Orchestrator certificate: create and rotate
+
+`setup\03_orchestrator_certificate.sh` creates a certificate, uploads its public
+part to `contoso-orchestrator`, and leaves one file, `orchestrator.pem`, holding
+the private key and certificate. Copy that file to the on-premises host, restrict
+its permissions, and set `ORCHESTRATOR_CERT_PATH` to it. The private key never
+goes to Azure. The server prefers the certificate whenever the path is set.
+
+**What happens when it expires.** Entra stops accepting the certificate, the
+orchestrator can no longer get an Azure token, and every call to the MCP server
+fails when it tries to create a sandbox. Nothing is exposed. Calls just fail, so
+rotate before expiry rather than after.
+
+**Rotation steps (do them a few weeks before the expiry date):**
+
+1. **Create the new certificate.** Run `setup\03_orchestrator_certificate.sh`
+   again. It adds a second certificate to the app registration and leaves the old
+   one in place, so both work during the changeover.
+2. **Install it.** Copy the new `orchestrator.pem` to the on-premises host. Update
+   `ORCHESTRATOR_CERT_PATH` if the path changed, and restart the MCP server.
+3. **Check that it works.** Run `mcp_server\test_client.py`. The agent-client call
+   must still run code in a sandbox.
+4. **Remove the old certificate.** List the credentials, then delete the old one:
+
+   ```
+   az ad app credential list --id <orchestrator-app-id> --query "[].{keyId:keyId,end:endDateTime}" -o table
+   az ad app credential delete --id <orchestrator-app-id> --key-id <old-key-id>
+   ```
+
+5. **Delete the old PEM file** from the host and from anywhere else it was copied.
+
+Do not let this slip: put the expiry date in a calendar or monitoring alert when you
+create the certificate. The script prints it. If a certificate is lost or leaked,
+skip the overlap: delete its credential immediately, then create and install a new one.
+Once the certificate works, delete any client secret still on the app registration,
+so a secret cannot be used instead.
 
 ## Production hardening
 

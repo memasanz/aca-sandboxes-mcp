@@ -5,6 +5,10 @@ an administrator cannot access session information or logs. The design relies on
 governance controls (role separation, egress lockdown, per-session keys), not on
 confidential compute.
 
+## The idea in one paragraph
+
+An agent that needs to run code calls an MCP tool hosted on premises. That MCP server (the orchestrator) is the only identity holding the data-plane role on the sandbox group, so Azure administrators can create and delete sandboxes but cannot open one or read its contents. For each call the orchestrator creates a fresh sandbox, denies all outbound traffic, agrees a one-time key with the sandbox (ECDH), sends the code and data encrypted, reads back the encrypted result, and deletes the sandbox. Nothing is left to recover, and the logs record only metadata, never content. The protection comes from role separation and checks, not from confidential-computing hardware, so the customer has to accept that trade-off (see `docs\sandbox-approach.md`).
+
 ## How the pieces connect
 
 ![App registrations and who calls what](docs/images/app-registrations.png)

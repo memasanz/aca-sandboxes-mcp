@@ -16,6 +16,7 @@ sed -i 's/\r$//' setup/*.sh
 |---|---|
 | `01_infra.sh [region] [suffix]` | Creates the resource group `rg-contoso-sandbox` and the sandbox group `sg-contoso-<suffix>` (defaults: `eastus2`, `demo`). Creates two service principals: `contoso-orchestrator`, which gets Container Apps SandboxGroup Data Owner on the group, and `sp-contoso-admin`, which gets Contributor plus Role Based Access Control Administrator on the resource group, limited to assigning Reader. |
 | `02_mcp_app_registrations.sh` | Creates `contoso-mcp-api` (the audience the MCP server accepts, version 2 tokens) and `contoso-agent-client` (the agent's identity, with a client secret). |
+| `03_orchestrator_certificate.sh [days] [folder]` | Creates a certificate for `contoso-orchestrator`, uploads the public part, and writes `orchestrator.pem` (key plus certificate) for the on-premises host. Set `ORCHESTRATOR_CERT_PATH` to it. Re-run it to rotate: the old certificate stays valid until you delete it. See "Orchestrator certificate: create and rotate" in `docs\app-registrations.md`. |
 | `99_teardown.sh` | Deletes the resource group and all four app registrations after you type `yes`. |
 
 Each create script is safe to re-run. It reuses existing app registrations and adds a new secret each time.
